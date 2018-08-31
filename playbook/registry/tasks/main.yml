@@ -1,0 +1,38 @@
+- name: restarting docker service
+  service:
+        name: docker
+        state: restarted
+
+- name: pulling registry image
+  docker_image:
+        name: registry
+        tag: latest
+
+- name: make backup folder
+  file:
+        name: /ansible_docker_repo
+        state: directory
+
+- name: lanuching  private registry
+  docker_container:
+        name: ansible_private_web_server_repo
+        state: started
+        image: registry
+        ports: 5000:5000
+        volumes: /ansible_docker_repo:/var/lib/registry
+
+- name: updating hosts file
+  blockinfile:
+        path: /etc/hosts
+        insertafter: localhost6.localdomain6
+        block: |
+         192.168.43.213 openshift
+         192.168.43.19  openshift2
+         192.168.43.142 openshift3
+        state: present
+
+- name: allow 5000 port on firewall
+  service:
+        name: firewalld
+        state: stopped
+

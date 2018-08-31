@@ -1,0 +1,33 @@
+---
+- hosts: registry
+  pre_tasks:
+    - debug:
+        msg:  configuring private registry
+  tasks:
+   - include_role:
+        name: registry
+  post_tasks:
+    - debug:
+        msg: private registry configured
+
+- hosts: creator
+  pre_tasks:
+    - debug:
+        msg: creating image and pushing to registry
+  tasks:
+  - include_role:
+        name: creator
+  post_tasks:
+    - debug:
+        msg: image pushed to registry  
+
+- hosts: developer
+  pre_tasks:
+    - debug:
+        msg: pulling 
+  tasks:
+     - include_role:
+        name: developer
+  post_tasks:
+    - debug:
+        msg: web server launched 

@@ -1,0 +1,31 @@
+
+   - name: starting docker service
+     service:
+        name: docker
+        state: started
+
+   - name: writing insecure registries
+     lineinfile:
+        path: /usr/lib/systemd/system/docker.service
+        regexp: 'ExecStart=/usr/bin/dockerd'
+        line: 'ExecStart=/usr/bin/dockerd --insecure-registry "openshift:5000"'
+        state: present
+
+   - name: reloading daemon
+     command: systemctl daemon-reload
+
+   - name: restarting docker service
+     service:
+        name: docker
+        state: restarted
+
+   - name: pulling docker images from private registry
+     docker_image:
+        name: openshift:5000/ansible_web_server
+        tag: v1
+
+   - name: launching container for developers
+     docker_container:
+        name: mywebserver
+        image: openshift:5000/ansible_web_server:v1
+

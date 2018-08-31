@@ -1,0 +1,63 @@
+  - name: starting docker service
+    service:
+        name: docker
+        state: started
+
+  - name: pulling centos image
+    docker_image:
+        name: centos
+        tag: latest
+
+  - name: making workspace
+    file:
+        path: /workspace
+        state: directory
+        mode: 0644
+        owner: root
+
+  - name: creating dockerfile
+    copy:
+        content: ""
+        dest: /workspace/Dockerfile
+        force: no
+        owner: root
+        mode: 0644
+
+  - name: writing in dockerfile
+    blockinfile:
+        path: /workspace/Dockerfile
+        block: |
+         FROM centos:latest
+         RUN yum install httpd -y
+         RUN echo hi > /var/www/html/index.html
+         CMD /usr/sbin/httpd -DFOREGROUND
+        state: present
+
+
+  - name: writing insecurity registry
+    lineinfile:
+        path: /usr/lib/systemd/system/docker.service
+        regexp: 'ExecStart=/usr/bin/dockerd'
+        line: 'ExecStart=/usr/bin/dockerd --insecure-registry "openshift:5000"'
+        state: present
+    notify:
+     - reloading daemon
+     - restarting docker service
+
+  - name: updating hosts file
+    blockinfile:
+        path: /etc/hosts
+        insertafter: localhost6.localdomain6
+        block: |
+         192.168.43.213 openshift
+         192.168.43.19  openshift2
+         192.168.43.142 openshift3
+        state: present
+
+  - name: building and pushing docker image
+    docker_image:
+        path: /workspace
+        name: openshift:5000/ansible_web_server
+        tag: v1
+        push: yes
+
